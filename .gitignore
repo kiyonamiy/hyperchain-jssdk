@@ -16,3 +16,4 @@ yalc.lock
 .VSCodeCounter
 logs/
 test/my-test.spec.ts
+examples/my-test

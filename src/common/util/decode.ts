@@ -13,6 +13,18 @@ export function decodeEvmResult(
   abi: string | ArrayBuffer | Uint8Array,
   methodName: string
 ): any[] {
+  return decodeEvmResultRet(response.result.ret, abi, methodName);
+}
+
+export function decodeHvmResultRet(ret: string) {
+  return StringUtil.fromHex(ret);
+}
+
+export function decodeEvmResultRet(
+  ret: string,
+  abi: string | ArrayBuffer | Uint8Array,
+  methodName: string
+): any[] {
   const abiStr = typeof abi === "string" ? abi : ByteUtil.toString(abi);
   const abiJson = JSON.parse(abiStr) as EvmType.AbiItem[];
   const abiItem = abiJson.find(
@@ -23,10 +35,10 @@ export function decodeEvmResult(
     throw new ArgError(`can't find ${methodName} from abi!`);
   }
   // 结果为 void 的情况
-  if (response.result.ret === "0x0") {
+  if (ret === "0x0") {
     return [];
   }
-  const decodedResult = AbiCoder.decodeParameters(abiItem.outputs || [], response.result.ret);
+  const decodedResult = AbiCoder.decodeParameters(abiItem.outputs || [], ret);
   // 优化结果显示 {0: '123', 1: '123', 2: '123', 3: ['123', '123'], __length__: 4} => ['123', '123', '123', ['123', '123']]
   const prettyResult: unknown[] = [];
   let curIndex = 0;
