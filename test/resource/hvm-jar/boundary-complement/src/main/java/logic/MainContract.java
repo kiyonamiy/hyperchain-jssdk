@@ -1,5 +1,8 @@
 package logic;
 
+import java.math.BigInteger;
+import java.util.Map;
+
 import cn.hyperchain.annotations.StoreField;
 import cn.hyperchain.core.Logger;
 import cn.hyperchain.contract.BaseContract;
@@ -29,5 +32,20 @@ public class MainContract extends BaseContract {
 
     public int sum(int a, int b, int c) {
       return a + b + c;
+    }
+
+    public BigInteger testBigInt(BigInteger num) {
+      return num;
+    }
+
+    public String testmap(Map<String, String> map) {
+      StringBuilder data = new StringBuilder();
+      for (Map.Entry entry : map.entrySet()) {
+        data.append("key: ");
+        data.append(entry.getKey());
+        data.append("value: ");
+        data.append((entry.getValue()));
+      }
+      return data.toString();
     }
 }

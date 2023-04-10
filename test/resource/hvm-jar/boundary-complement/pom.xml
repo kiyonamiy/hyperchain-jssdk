@@ -80,7 +80,7 @@
             <plugin>
                 <groupId>cn.hyperchain.hvm</groupId>
                 <artifactId>hvm-maven-plugin</artifactId>
-                <version>0.0.7</version>
+                <version>0.0.8-1</version>
                 <configuration>
                     <jarFile>${project.basedir}/target/${jar-file-name}</jarFile>
                     <invokeBeanPath>${project.basedir}/target/classes</invokeBeanPath>
