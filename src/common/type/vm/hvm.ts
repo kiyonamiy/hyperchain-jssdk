@@ -13,6 +13,7 @@ export enum DataType {
   List = "List",
   Map = "Map",
   Struct = "Struct",
+  BigInteger = "BigInteger",
 }
 
 export enum BeanType {

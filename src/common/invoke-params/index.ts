@@ -4,6 +4,7 @@ import * as StringUtil from "../util/string";
 import * as JSONBigintUtil from "../util/json-bigint";
 import { ArgError, RuntimeError } from "../error";
 import { Bean, BeanType, DataType } from "../type/vm/hvm";
+import { HvmType } from "..";
 
 interface Arg {
   structName: string;
@@ -117,9 +118,33 @@ class HvmAbiBuilder {
         this.bean.beanType === BeanType.InvokeBean
           ? requiredDataDesc.name
           : `${requiredDataDesc.name}#${i}`;
+
+      let structName = requiredDataDesc.structName;
+      if (
+        requiredDataDesc.properties != null &&
+        (requiredDataDesc.type === HvmType.DataType.List ||
+          requiredDataDesc.type === HvmType.DataType.Map)
+      ) {
+        // "structName": "class java.lang.String"
+        structName = `${requiredDataDesc.structName}<${requiredDataDesc.properties
+          .map(({ structName }) =>
+            structName.startsWith("class ") ? structName.slice("class ".length) : structName
+          )
+          .join(",")}>`;
+      }
+
+      // JSON.stringify(Map) 会返回 "{}"，不带任何数据
+      let value = arg as any;
+      if (arg instanceof Map) {
+        value = {} as any;
+        arg.forEach((v, k) => {
+          value[k] = v;
+        });
+      }
+
       argMap[mapKey] = {
-        structName: requiredDataDesc.structName,
-        value: arg,
+        structName,
+        value,
       };
     }
 
@@ -307,6 +332,13 @@ class HvmTypeBuilder {
     return this.addObject("java.lang.String", str);
   }
 
+  public addBigInteger(n: number | bigint): HvmTypeBuilder {
+    if (!checkType(n, DataType.BigInteger)) {
+      throw new ArgError(`${n} is not a java.math.BigInteger!`);
+    }
+    return this.addObject("java.math.BigInteger", n);
+  }
+
   public addObject(className: string, obj: any): HvmTypeBuilder {
     const paramBytes = this.paramToBytes(className, obj);
     this.payload = ByteUtil.concat(this.payload, paramBytes);
@@ -319,6 +351,14 @@ class HvmTypeBuilder {
   }
 
   private paramToBytes(clazzName: string, param: unknown): Uint8Array {
+    // 因为直接 JSON.stringify(Map) 会返回 "{}"，不带任何数据，所以需要转换
+    if (param instanceof Map) {
+      const temp = {} as any;
+      param.forEach((v, k) => {
+        temp[k] = v;
+      });
+      param = temp;
+    }
     const paramStr = typeof param === "string" ? param : JSONBigintUtil.stringify(param);
     const clazzNameBytes = StringUtil.toByte(clazzName);
     const paramStrBytes = StringUtil.toByte(paramStr);
@@ -353,7 +393,13 @@ function checkType(value: unknown, targetType: DataType): boolean {
     case DataType.Float:
     case DataType.Double:
       return typeof value === "number" && NumUtil.isFloat(value);
+    case DataType.BigInteger:
+      return typeof value === "bigint" || (typeof value === "number" && NumUtil.isInteger(value));
+    case DataType.List:
+      return typeof value === "object" || value instanceof Array;
+    case DataType.Map:
+      return typeof value === "object" || value instanceof Map;
     default:
-      return true;
+      return false;
   }
 }
